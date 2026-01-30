@@ -5,7 +5,7 @@ import {
   RecipeTag, 
   MealRecord, 
   RecipeWithDetails 
-} from '../types/definitions';
+} from '../types/definitions.js';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 

@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
-import Home from './pages/Home';
+import HomePage from './pages/Home';
 import RecipeList from './pages/RecipeList';
 import RecipeDetail from './pages/RecipeDetail';
 import RecipeForm from './pages/RecipeForm';
@@ -41,7 +41,7 @@ function App() {
             
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Layout />}>
-                <Route index element={<Home />} />
+                <Route index element={<HomePage />} />
                 <Route path="recipes" element={<RecipeList />} />
                 <Route path="recipes/new" element={<RecipeForm />} />
                 <Route path="recipes/:id" element={<RecipeDetail />} />

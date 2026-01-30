@@ -35,4 +35,4 @@ RUN mkdir -p server/uploads
 EXPOSE 3000
 
 # Start server
-CMD ["npx", "ts-node", "--esm", "server/index.ts"]
+CMD ["npx", "ts-node", "--esm", "--project", "tsconfig.server.json", "server/index.ts"]

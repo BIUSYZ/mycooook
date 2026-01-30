@@ -20,7 +20,11 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -56,6 +60,33 @@ const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) 
   });
 };
 
+// Helpers
+const toCamelCase = (o: any): any => {
+  if (Array.isArray(o)) {
+    return o.map(toCamelCase);
+  } else if (o !== null && typeof o === 'object') {
+    return Object.keys(o).reduce((result, key) => {
+      const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+      result[camelKey] = toCamelCase(o[key]);
+      return result;
+    }, {} as any);
+  }
+  return o;
+};
+
+const toSnakeCase = (o: any): any => {
+  if (Array.isArray(o)) {
+    return o.map(toSnakeCase);
+  } else if (o !== null && typeof o === 'object' && !(o instanceof Date)) {
+    return Object.keys(o).reduce((result, key) => {
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      result[snakeKey] = toSnakeCase(o[key]);
+      return result;
+    }, {} as any);
+  }
+  return o;
+};
+
 // --- Routes ---
 
 // Auth
@@ -69,120 +100,171 @@ app.post('/api/auth/signup', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
     res.json({ token, user: { id: user.id, email: user.email } });
   } catch (error) {
+    console.error('Signup error:', error);
     res.status(400).json({ error: 'User already exists or invalid data' });
   }
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !await bcrypt.compare(password, user.password)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !await bcrypt.compare(password, user.password)) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
+    res.json({ token, user: { id: user.id, email: user.email } });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
-  res.json({ token, user: { id: user.id, email: user.email } });
 });
 
 app.get('/api/auth/me', authenticateToken, async (req: AuthRequest, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ id: user.id, email: user.email });
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ id: user.id, email: user.email });
+  } catch (error) {
+    console.error('Me error:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
 });
 
 // Recipes
 app.get('/api/recipes', authenticateToken, async (req: AuthRequest, res) => {
-  const recipes = await prisma.recipe.findMany({
-    where: { userId: req.user!.id },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      ingredients: true,
-      steps: { orderBy: { stepNumber: 'asc' } },
-      tags: true
-    }
-  });
-  
-  // Parse images JSON
-  const parsedRecipes = recipes.map((r: any) => ({
-    ...r,
-    images: JSON.parse(r.images)
-  }));
-  
-  res.json(parsedRecipes);
+  try {
+    const recipes = await prisma.recipe.findMany({
+      where: { userId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        ingredients: true,
+        steps: { orderBy: { stepNumber: 'asc' } },
+        tags: true
+      }
+    });
+    
+    // Parse images JSON and convert to snake_case
+    const parsedRecipes = recipes.map((r: any) => ({
+      ...r,
+      images: JSON.parse(r.images)
+    }));
+    
+    res.json(toSnakeCase(parsedRecipes));
+  } catch (error) {
+    console.error('Get recipes error:', error);
+    res.status(500).json({ error: 'Failed to fetch recipes' });
+  }
 });
 
 app.get('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => {
-  const recipe = await prisma.recipe.findFirst({
-    where: { id: req.params.id, userId: req.user!.id },
-    include: {
-      ingredients: true,
-      steps: { orderBy: { stepNumber: 'asc' } },
-      tags: true
-    }
-  });
-  if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
-  res.json({ ...recipe, images: JSON.parse(recipe.images) });
+  try {
+    const recipe = await prisma.recipe.findFirst({
+      where: { id: req.params.id, userId: req.user!.id },
+      include: {
+        ingredients: true,
+        steps: { orderBy: { stepNumber: 'asc' } },
+        tags: true
+      }
+    });
+    if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
+    
+    const parsedRecipe = { ...recipe, images: JSON.parse(recipe.images) };
+    res.json(toSnakeCase(parsedRecipe));
+  } catch (error) {
+    console.error('Get recipe error:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe' });
+  }
 });
 
 app.post('/api/recipes', authenticateToken, async (req: AuthRequest, res) => {
-  const { ingredients, steps, tags, images, ...data } = req.body;
-  const recipe = await prisma.recipe.create({
-    data: {
-      ...data,
-      userId: req.user!.id,
-      images: JSON.stringify(images || []),
-      ingredients: { create: ingredients },
-      steps: { create: steps },
-      tags: { create: tags }
-    },
-    include: { ingredients: true, steps: true, tags: true }
-  });
-  res.json({ ...recipe, images: JSON.parse(recipe.images) });
+  try {
+    // Convert request body to camelCase
+    const camelBody = toCamelCase(req.body);
+    const { ingredients, steps, tags, images, ...data } = camelBody;
+
+    const recipe = await prisma.recipe.create({
+      data: {
+        ...data,
+        userId: req.user!.id,
+        images: JSON.stringify(images || []),
+        ingredients: { create: ingredients },
+        steps: { create: steps },
+        tags: { create: tags }
+      },
+      include: { ingredients: true, steps: true, tags: true }
+    });
+    
+    const parsedRecipe = { ...recipe, images: JSON.parse(recipe.images) };
+    res.json(toSnakeCase(parsedRecipe));
+  } catch (error) {
+    console.error('Create recipe error:', error);
+    res.status(500).json({ error: 'Failed to create recipe' });
+  }
 });
 
 app.put('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { ingredients, steps, tags, images, ...data } = req.body;
-  
-  // Transaction to update recipe and replace relations
-  const updatedRecipe = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    // Verify ownership
-    const exists = await tx.recipe.findFirst({ where: { id, userId: req.user!.id } });
-    if (!exists) throw new Error('Not found');
+  try {
+    const { id } = req.params;
+    const camelBody = toCamelCase(req.body);
+    const { ingredients, steps, tags, images, ...data } = camelBody;
+    
+    // Transaction to update recipe and replace relations
+    const updatedRecipe = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Verify ownership
+      const exists = await tx.recipe.findFirst({ where: { id, userId: req.user!.id } });
+      if (!exists) throw new Error('Not found');
 
-    // Update basic info
-    const recipe = await tx.recipe.update({
-      where: { id },
-      data: {
-        ...data,
-        images: JSON.stringify(images || [])
+      // Update basic info
+      const recipe = await tx.recipe.update({
+        where: { id },
+        data: {
+          ...data,
+          images: JSON.stringify(images || [])
+        }
+      });
+
+      // Replace ingredients
+      await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
+      if (ingredients?.length) {
+        await tx.recipeIngredient.createMany({
+          data: ingredients.map((i: any) => ({ ...i, recipeId: id }))
+        });
       }
+
+      // Replace steps
+      await tx.cookingStep.deleteMany({ where: { recipeId: id } });
+      if (steps?.length) {
+        await tx.cookingStep.createMany({
+          data: steps.map((s: any) => ({ ...s, recipeId: id }))
+        });
+      }
+
+      // We should also return the full object with relations
+      return await tx.recipe.findUnique({
+        where: { id },
+        include: { ingredients: true, steps: true, tags: true }
+      });
     });
 
-    // Replace ingredients
-    await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
-    if (ingredients?.length) {
-      await tx.recipeIngredient.createMany({
-        data: ingredients.map((i: any) => ({ ...i, recipeId: id }))
-      });
-    }
+    if (!updatedRecipe) throw new Error('Failed to retrieve updated recipe');
 
-    // Replace steps
-    await tx.cookingStep.deleteMany({ where: { recipeId: id } });
-    if (steps?.length) {
-      await tx.cookingStep.createMany({
-        data: steps.map((s: any) => ({ ...s, recipeId: id }))
-      });
-    }
-
-    return recipe;
-  });
-
-  res.json(updatedRecipe);
+    const parsedRecipe = { ...updatedRecipe, images: JSON.parse(updatedRecipe.images) };
+    res.json(toSnakeCase(parsedRecipe));
+  } catch (error) {
+    console.error('Update recipe error:', error);
+    res.status(500).json({ error: 'Failed to update recipe' });
+  }
 });
 
 app.delete('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => {
-  await prisma.recipe.deleteMany({ where: { id: req.params.id, userId: req.user!.id } });
-  res.json({ success: true });
+  try {
+    await prisma.recipe.deleteMany({ where: { id: req.params.id, userId: req.user!.id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete recipe error:', error);
+    res.status(500).json({ error: 'Failed to delete recipe' });
+  }
 });
 
 // Upload
