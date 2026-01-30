@@ -160,7 +160,7 @@ app.get('/api/recipes', authenticateToken, async (req: AuthRequest, res) => {
 app.get('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const recipe = await prisma.recipe.findFirst({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
       include: {
         ingredients: true,
         steps: { orderBy: { stepNumber: 'asc' } },
@@ -212,12 +212,12 @@ app.put('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => 
     // Transaction to update recipe and replace relations
     const updatedRecipe = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Verify ownership
-      const exists = await tx.recipe.findFirst({ where: { id, userId: req.user!.id } });
+      const exists = await tx.recipe.findFirst({ where: { id: id as string, userId: req.user!.id } });
       if (!exists) throw new Error('Not found');
 
       // Update basic info
       const recipe = await tx.recipe.update({
-        where: { id },
+        where: { id: id as string },
         data: {
           ...data,
           images: JSON.stringify(images || [])
@@ -225,7 +225,7 @@ app.put('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => 
       });
 
       // Replace ingredients
-      await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
+      await tx.recipeIngredient.deleteMany({ where: { recipeId: id as string } });
       if (ingredients?.length) {
         await tx.recipeIngredient.createMany({
           data: ingredients.map((i: any) => ({ ...i, recipeId: id }))
@@ -233,7 +233,7 @@ app.put('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => 
       }
 
       // Replace steps
-      await tx.cookingStep.deleteMany({ where: { recipeId: id } });
+      await tx.cookingStep.deleteMany({ where: { recipeId: id as string } });
       if (steps?.length) {
         await tx.cookingStep.createMany({
           data: steps.map((s: any) => ({ ...s, recipeId: id }))
@@ -242,7 +242,7 @@ app.put('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => 
 
       // We should also return the full object with relations
       return await tx.recipe.findUnique({
-        where: { id },
+        where: { id: id as string },
         include: { ingredients: true, steps: true, tags: true }
       });
     });
@@ -259,7 +259,7 @@ app.put('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => 
 
 app.delete('/api/recipes/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    await prisma.recipe.deleteMany({ where: { id: req.params.id, userId: req.user!.id } });
+    await prisma.recipe.deleteMany({ where: { id: req.params.id as string, userId: req.user!.id } });
     res.json({ success: true });
   } catch (error) {
     console.error('Delete recipe error:', error);

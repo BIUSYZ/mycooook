@@ -21,6 +21,7 @@ RUN npm install --omit=dev && npm install prisma typescript ts-node @types/node
 COPY server ./server
 COPY prisma ./prisma
 COPY tsconfig.json ./
+COPY tsconfig.server.json ./
 
 # Copy built frontend
 COPY --from=frontend-builder /app/dist ./public
