@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc -b --noEmit",
-    "server": "node --loader ts-node/esm server/index.ts"
+    "server": "node server/dist/index.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

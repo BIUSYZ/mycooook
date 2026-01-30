@@ -15,7 +15,7 @@ WORKDIR /app
 # Install production dependencies for server
 COPY package*.json ./
 # We need prisma client in production
-RUN npm install --omit=dev && npm install prisma typescript ts-node @types/node
+RUN npm install --omit=dev && npm install prisma typescript @types/node
 
 # Copy server code
 COPY server ./server
@@ -28,6 +28,9 @@ COPY --from=frontend-builder /app/dist ./public
 
 # Generate Prisma Client
 RUN npx prisma generate
+
+# Build TypeScript files
+RUN npx tsc --project tsconfig.server.json --outDir server/dist
 
 # Create uploads directory
 RUN mkdir -p server/uploads

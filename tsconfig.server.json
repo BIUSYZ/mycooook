@@ -5,7 +5,9 @@
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": false,
+    "outDir": "server/dist",
+    "allowImportingTsExtensions": false
   },
   "include": ["server"]
 }
