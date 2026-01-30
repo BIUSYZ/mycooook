@@ -27,6 +27,104 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Handle root path
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>MyCooook - 食谱记录应用</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f5f5f5;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .container {
+          background-color: white;
+          padding: 40px;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          text-align: center;
+          max-width: 600px;
+          width: 90%;
+        }
+        h1 {
+          color: #333;
+          margin-bottom: 20px;
+        }
+        p {
+          color: #666;
+          margin-bottom: 30px;
+          line-height: 1.5;
+        }
+        .api-info {
+          background-color: #f0f0f0;
+          padding: 20px;
+          border-radius: 4px;
+          text-align: left;
+          margin-top: 30px;
+        }
+        .api-info h3 {
+          color: #333;
+          margin-bottom: 10px;
+        }
+        .api-info ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .api-info li {
+          margin-bottom: 8px;
+          color: #555;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>MyCooook - 食谱记录应用</h1>
+        <p>服务器正在运行！这是一个后端 API 服务器，提供食谱管理的 RESTful API。</p>
+        <p>前端应用正在开发中，敬请期待！</p>
+        
+        <div class="api-info">
+          <h3>API 端点信息：</h3>
+          <ul>
+            <li><strong>认证 API：</strong></li>
+            <li>- POST /api/auth/signup - 用户注册</li>
+            <li>- POST /api/auth/login - 用户登录</li>
+            <li>- GET /api/auth/me - 获取当前用户信息</li>
+            <li><br><strong>食谱 API：</strong></li>
+            <li>- GET /api/recipes - 获取食谱列表</li>
+            <li>- GET /api/recipes/:id - 获取食谱详情</li>
+            <li>- POST /api/recipes - 创建新食谱</li>
+            <li>- PUT /api/recipes/:id - 更新食谱</li>
+            <li>- DELETE /api/recipes/:id - 删除食谱</li>
+            <li><br><strong>上传 API：</strong></li>
+            <li>- POST /api/upload - 上传图片</li>
+          </ul>
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// Handle other API routes (should be defined before this catch-all)
+// This ensures that API routes are handled before the catch-all
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Not Found' });
+});
 
 // Storage
 const storage = multer.diskStorage({
