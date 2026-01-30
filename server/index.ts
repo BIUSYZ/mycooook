@@ -29,31 +29,6 @@ app.use(express.json());
 // Serve static files from uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'server/uploads')));
 
-// Serve frontend static files
-const publicPath = path.join(__dirname, '../../public');
-console.log('Serving static files from:', publicPath);
-if (fs.existsSync(publicPath)) {
-  console.log('Public directory exists');
-  const files = fs.readdirSync(publicPath);
-  console.log('Files in public directory:', files);
-} else {
-  console.error('Public directory does not exist:', publicPath);
-}
-
-app.use(express.static(publicPath));
-
-// Handle React routing, return all requests to React app
-app.get(/^(?!\/api|\/uploads).*$/, (req, res) => {
-  // Check if file exists, if not, next() to let express handle 404 or try other static files
-  const filePath = path.join(publicPath, 'index.html');
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    console.error('Frontend index.html not found at:', filePath);
-    res.status(404).send('Frontend not found. Please check deployment logs.');
-  }
-});
-
 // Storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
