@@ -8,9 +8,10 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "skipLibCheck": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": false,
     "moduleDetection": "force",
