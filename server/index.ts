@@ -34,7 +34,66 @@ app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 // Handle root path - serve frontend index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
+  console.log('Trying to serve index.html from:', indexPath);
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.log('index.html not found, serving fallback');
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="zh-CN">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MyCooook - 食谱记录应用</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+          }
+          .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+          }
+          h1 {
+            color: #333;
+            margin-bottom: 20px;
+          }
+          p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+          }
+          .error {
+            color: red;
+            margin: 20px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>MyCooook - 食谱记录应用</h1>
+          <p class="error">前端构建文件未找到，请检查部署过程。</p>
+          <p>服务器正在运行，API 端点可用。</p>
+          <p>请确保在构建容器时前端代码已正确编译。</p>
+        </div>
+      </body>
+      </html>
+    `);
+  }
 });
 
 // Handle 404 errors
@@ -44,7 +103,12 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
     res.status(404).json({ error: 'Not Found' });
   } else {
-    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+    const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).json({ error: 'Frontend files not found' });
+    }
   }
 });
 

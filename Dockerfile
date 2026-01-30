@@ -4,33 +4,39 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --verbose
 
-# Copy server code
+# Copy server code (source)
 COPY server ./server
+
+# Copy Prisma files
 COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+# Copy TypeScript config files
 COPY tsconfig.json ./
 COPY tsconfig.server.json ./
 
-# Copy frontend code
-COPY src ./src
-COPY public ./public
-COPY index.html ./
-COPY vite.config.ts ./
-COPY tailwind.config.js ./
-COPY postcss.config.js ./
+# Set DATABASE_URL environment variable for Prisma
+ENV DATABASE_URL="file:./dev.db"
 
-# Generate Prisma Client
-RUN npx prisma@6.19.2 generate
+# Generate Prisma Client for Linux
+RUN npx prisma generate
 
 # Build TypeScript files for backend
 RUN npx tsc --project tsconfig.server.json --outDir server/dist
 
-# Build frontend
-RUN npm run build
+# Copy frontend build files
+COPY dist ./dist
+COPY public ./public
 
-# Create uploads directory
+# Create uploads directory if not exists
 RUN mkdir -p server/uploads
+
+# Debug: Check if dist directory exists and list files
+RUN ls -la /app/dist
+RUN ls -la /app/dist/assets || true
+RUN ls -la /app/server/dist || true
 
 # Expose port
 EXPOSE 3000
