@@ -6,7 +6,8 @@ import {
   Calendar, 
   BarChart2, 
   Settings,
-  ChefHat
+  ChefHat,
+  Database
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useUIStore } from '../../store';
@@ -14,6 +15,7 @@ import { useUIStore } from '../../store';
 const navigation = [
   { name: '仪表盘', href: '/', icon: LayoutDashboard },
   { name: '食谱', href: '/recipes', icon: UtensilsCrossed },
+  { name: '食材库', href: '/ingredients', icon: Database },
   { name: '膳食计划', href: '/calendar', icon: Calendar },
   { name: '统计', href: '/statistics', icon: BarChart2 },
   { name: '设置', href: '/settings', icon: Settings },

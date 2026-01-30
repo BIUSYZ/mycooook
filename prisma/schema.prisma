@@ -52,8 +52,15 @@ model RecipeIngredient {
   recipe     Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   name       String
   amount     String
-  unit       String
+  unit       String?
   isOptional Boolean @default(false)
+}
+
+model IngredientOption {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  category  String?
+  createdAt DateTime @default(now())
 }
 
 model CookingStep {

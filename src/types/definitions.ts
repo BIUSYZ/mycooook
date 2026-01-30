@@ -21,8 +21,14 @@ export interface RecipeIngredient {
   recipe_id: string;
   name: string;
   amount: string;
-  unit: string;
+  unit?: string;
   is_optional: boolean;
+}
+
+export interface IngredientOption {
+  id: string;
+  name: string;
+  category?: string;
 }
 
 export interface CookingStep {

@@ -11,6 +11,7 @@ import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
 import Search from './pages/Search';
 import Settings from './pages/Settings';
+import IngredientOptions from './pages/IngredientOptions';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 
@@ -50,6 +51,7 @@ function App() {
                 <Route path="statistics" element={<Statistics />} />
                 <Route path="search" element={<Search />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="ingredients" element={<IngredientOptions />} />
               </Route>
             </Route>
           </Routes>

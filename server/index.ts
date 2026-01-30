@@ -132,6 +132,44 @@ app.get('/api/auth/me', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+// Ingredient Options
+app.get('/api/ingredients/options', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const options = await prisma.ingredientOption.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.json(toSnakeCase(options));
+  } catch (error) {
+    console.error('Get ingredient options error:', error);
+    res.status(500).json({ error: 'Failed to fetch ingredient options' });
+  }
+});
+
+app.post('/api/ingredients/options', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { name, category } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+
+    const option = await prisma.ingredientOption.create({
+      data: { name, category }
+    });
+    res.json(toSnakeCase(option));
+  } catch (error) {
+    console.error('Create ingredient option error:', error);
+    res.status(500).json({ error: 'Failed to create ingredient option' });
+  }
+});
+
+app.delete('/api/ingredients/options/:id', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    await prisma.ingredientOption.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete ingredient option error:', error);
+    res.status(500).json({ error: 'Failed to delete ingredient option' });
+  }
+});
+
 // Recipes
 app.get('/api/recipes', authenticateToken, async (req: AuthRequest, res) => {
   try {

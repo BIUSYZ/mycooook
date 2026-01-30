@@ -75,6 +75,31 @@ export const api = {
     if (!res.ok) throw new Error('Failed to delete recipe');
   },
 
+  // Ingredient Options
+  async getIngredientOptions() {
+    const res = await fetch(`${API_URL}/ingredients/options`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Failed to fetch ingredient options');
+    return res.json();
+  },
+
+  async addIngredientOption(name: string, category?: string) {
+    const res = await fetch(`${API_URL}/ingredients/options`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ name, category })
+    });
+    if (!res.ok) throw new Error('Failed to add ingredient option');
+    return res.json();
+  },
+
+  async deleteIngredientOption(id: string) {
+    const res = await fetch(`${API_URL}/ingredients/options/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to delete ingredient option');
+  },
+
   // Storage
   async uploadImage(file: File, userId: string): Promise<string> {
     const formData = new FormData();
