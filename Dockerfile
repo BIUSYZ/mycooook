@@ -1,31 +1,22 @@
-# Stage 1: Build Frontend
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Remove server directory to keep frontend build clean
-RUN rm -rf server
-RUN npm run build
-
-# Stage 2: Setup Backend & Serve
+# Setup Backend & Serve
 FROM node:20-alpine
 WORKDIR /app
 
-# Install production dependencies for server
+# Install dependencies
 COPY package*.json ./
-# We need prisma client in production
-RUN npm install --omit=dev && npm install prisma
+RUN npm install
 
-# Copy server code (including pre-built JavaScript files)
+# Copy server code
 COPY server ./server
 COPY prisma ./prisma
-
-# Copy built frontend
-COPY --from=frontend-builder /app/dist ./public
+COPY tsconfig.json ./
+COPY tsconfig.server.json ./
 
 # Generate Prisma Client
-RUN npx prisma generate
+RUN npx prisma@6.19.2 generate
+
+# Build TypeScript files
+RUN npx tsc --project tsconfig.server.json --outDir server/dist
 
 # Create uploads directory
 RUN mkdir -p server/uploads
@@ -34,4 +25,4 @@ RUN mkdir -p server/uploads
 EXPOSE 3000
 
 # Start server
-CMD ["npm", "run", "server"]
+CMD ["node", "server/dist/index.js"]
