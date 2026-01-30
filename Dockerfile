@@ -12,11 +12,22 @@ COPY prisma ./prisma
 COPY tsconfig.json ./
 COPY tsconfig.server.json ./
 
+# Copy frontend code
+COPY src ./src
+COPY public ./public
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+
 # Generate Prisma Client
 RUN npx prisma@6.19.2 generate
 
-# Build TypeScript files
+# Build TypeScript files for backend
 RUN npx tsc --project tsconfig.server.json --outDir server/dist
+
+# Build frontend
+RUN npm run build
 
 # Create uploads directory
 RUN mkdir -p server/uploads
