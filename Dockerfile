@@ -36,4 +36,4 @@ RUN mkdir -p server/uploads
 EXPOSE 3000
 
 # Start server
-CMD ["node", "--loader", "ts-node/esm", "server/index.ts"]
+CMD ["npm", "run", "server"]
