@@ -26,89 +26,31 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, '..', 'public')));
-// Serve frontend build files
-app.use(express.static(path.join(__dirname, '..', 'dist')));
+// Serve static files from uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'server/uploads')));
 
-// Handle root path - serve frontend index.html
-app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
-  console.log('Trying to serve index.html from:', indexPath);
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    console.log('index.html not found, serving fallback');
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="zh-CN">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>MyCooook - 食谱记录应用</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-          }
-          .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 600px;
-            width: 90%;
-          }
-          h1 {
-            color: #333;
-            margin-bottom: 20px;
-          }
-          p {
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.5;
-          }
-          .error {
-            color: red;
-            margin: 20px 0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>MyCooook - 食谱记录应用</h1>
-          <p class="error">前端构建文件未找到，请检查部署过程。</p>
-          <p>服务器正在运行，API 端点可用。</p>
-          <p>请确保在构建容器时前端代码已正确编译。</p>
-        </div>
-      </body>
-      </html>
-    `);
-  }
-});
+// Serve frontend static files
+const publicPath = path.join(__dirname, '../../public');
+console.log('Serving static files from:', publicPath);
+if (fs.existsSync(publicPath)) {
+  console.log('Public directory exists');
+  const files = fs.readdirSync(publicPath);
+  console.log('Files in public directory:', files);
+} else {
+  console.error('Public directory does not exist:', publicPath);
+}
 
-// Handle 404 errors
-// For API routes, return 404 JSON
-// For other routes, serve frontend index.html for client-side routing
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    res.status(404).json({ error: 'Not Found' });
+app.use(express.static(publicPath));
+
+// Handle React routing, return all requests to React app
+app.get(/^(?!\/api|\/uploads).*$/, (req, res) => {
+  // Check if file exists, if not, next() to let express handle 404 or try other static files
+  const filePath = path.join(publicPath, 'index.html');
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
   } else {
-    const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).json({ error: 'Frontend files not found' });
-    }
+    console.error('Frontend index.html not found at:', filePath);
+    res.status(404).send('Frontend not found. Please check deployment logs.');
   }
 });
 
